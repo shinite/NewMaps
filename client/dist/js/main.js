@@ -21418,9 +21418,51 @@ module.exports = require('./lib/React');
 },{}],180:[function(require,module,exports){
 var React= require('react');
 var ReactDOM=require('react-dom');
-var google=require( 'google-maps-api' )( 'MY_KEY' );
 
-class Example extends React.Component {
+var DCChildButton=React.createClass({displayName: "DCChildButton",
+
+		getInitialState:function(){
+			return({start:"" , end:" "})
+		},
+
+		setStart:function(event){
+	    return(
+			this.setState({start:event.target.value})
+	    )
+		},
+
+		setEnd:function(event){
+	    return(
+			this.setState({end:event.target.value})
+	    )
+		},
+
+	  sendtoParent:function(){
+	    this.props.click(this.state.start,this.state.end)
+	  },
+
+	  	render: function() { 
+	    return (
+	      React.createElement("div", null, 
+	        React.createElement("input", {type: "text", className: "form-control", placeholder: "Enter Start Location", id: "searchBox", value: this.state.start, onChange: this.setStart}), 
+	       	React.createElement("input", {type: "text", className: "form-control", placeholder: "Enter Destination", id: "searchBox", value: this.state.end, onChange: this.setEnd}), 
+	        React.createElement("a", {className: "btn btn-primary btn-medium", href: "#", id: "searchButton", onClick: this.sendtoParent}, 
+	         React.createElement("b", null, " Search..   ")
+	       	)
+      )  
+    )
+  }
+
+})
+
+module.exports=DCChildButton;
+
+},{"react":178,"react-dom":35}],181:[function(require,module,exports){
+var React= require('react');
+var ReactDOM=require('react-dom');
+var mapsapi=require( 'google-maps-api' )( 'Key')
+
+class DCChildGoogle extends React.Component {
   constructor() {
     super();
     this.state = {
@@ -21430,12 +21472,17 @@ class Example extends React.Component {
     };
   }
 
-
   componentDidMount() {
+
+    console.log("mounted")
+    var that=this
+    mapsapi().then(function(maps){
+      console.log("mapsapi")
     // Some sample data plus a helper for the DistanceMatrixService.
     const origin = new google.maps.LatLng(52.516242, 13.377720);
     const destination = 'Potsdam, Germany';
     const matrix = new google.maps.DistanceMatrixService();
+
     
     // Get distance from Google API, if server responds, call renderDetails().
     matrix.getDistanceMatrix({
@@ -21443,23 +21490,25 @@ class Example extends React.Component {
         destinations: [destination],
         travelMode: google.maps.TravelMode.DRIVING,
       }, 
-      this.renderDetails.bind(this)
-    );
-  }
-  
-  renderDetails(res, status) {
+       function(res, status) {
+    console.log(res.originAddresses[0] )
     // If the request was successfull, fill our state with the distance data.
     if (status == 'OK') {
-      this.setState({
+      that.setState({
         origin: res.originAddresses[0],
         destination: res.destinationAddresses[0],
         distance: res.rows[0].elements[0].distance.text,
-
       });
     } else {
       console.log(status);
     }
   }
+    );
+  })
+
+  }
+  
+ 
 
   render() {
     return(
@@ -21472,6 +21521,107 @@ class Example extends React.Component {
   }
 }
 
-ReactDOM.render(React.createElement(Example, null), document.getElementById('View'));
+module.exports=DCChildGoogle;
 
-},{"google-maps-api":26,"react":178,"react-dom":35}]},{},[180]);
+},{"google-maps-api":26,"react":178,"react-dom":35}],182:[function(require,module,exports){
+var React= require('react');
+var ReactDOM=require('react-dom');
+var DCChildButton=require('./DCChildButton')
+var DCChildGoogle=require('./DCChildGoogle')
+
+
+var DistanceCal=React.createClass({displayName: "DistanceCal",
+
+	getInitialState:function(){
+		return(
+			{start:'',end:''}
+			)
+		},
+	
+
+	HandleClick:function(begin,stop){
+		console.log(begin)
+		return(
+		this.setState({start: begin, end :stop})
+		)
+	},
+
+   	 render: function() {
+        return (
+      		React.createElement("div", null, 
+           		React.createElement(DCChildButton, {click: this.HandleClick}), 
+           		React.createElement(DCChildGoogle, {start: this.state.start, end: this.state.end})
+        	)
+        	)}
+})
+	
+module.exports=DistanceCal;
+
+},{"./DCChildButton":180,"./DCChildGoogle":181,"react":178,"react-dom":35}],183:[function(require,module,exports){
+var React= require('react');
+var ReactDOM=require('react-dom');
+var MapDisplayChild=require('./MapDisplayChild')
+
+var MapDisplay=React.createClass({displayName: "MapDisplay",
+
+   	 render: function() {
+        return (
+      		React.createElement("div", null, 
+            React.createElement(MapDisplayChild, {iframe: "iframe", src: "https://www.google.com/maps/embed?pb=!1m16!1m12!1m3!1d1944.2947669055661!2d77.61238195795659!3d12.93408236187857!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!2m1!1sforum!5e0!3m2!1sen!2sin!4v1476803918178", width: "600", height: "450", frameborder: "0", style: "border:0"})
+        	)
+        	)}
+})
+	
+module.exports=MapDisplay;
+
+},{"./MapDisplayChild":184,"react":178,"react-dom":35}],184:[function(require,module,exports){
+var React=require('react')
+var ReactDOM=require('react-dom')
+
+var React= require('react');
+var ReactDOM=require('react-dom');
+
+var MapDisplayChild=React.createClass({displayName: "MapDisplayChild",
+
+	 render:function()
+  {
+    var Iframe=this.props.iframe;
+
+    return(
+
+      React.createElement("div", null, 
+
+       React.createElement(Iframe, {src: this.props.src, height: this.props.height, width: this.props.width})
+
+      )
+      )
+  }
+});
+module.exports=MapDisplayChild;
+
+},{"react":178,"react-dom":35}],185:[function(require,module,exports){
+var React= require('react');
+var ReactDOM=require('react-dom');
+var DistanceCal=require('./component/DistanceCal')
+var MapDisplay=require('./component/MapDisplay')
+var DCChildButton=require('./component/DCChildButton')
+var DCChildGoogle=require('./component/DCChildGoogle')
+
+
+
+var MainComponent=React.createClass({displayName: "MainComponent",
+  render: function() {
+    return (
+      React.createElement("div", null, 
+      React.createElement(DCChildGoogle, null	)
+      
+      )
+    )
+  }
+
+})
+
+
+ReactDOM.render(React.createElement(MainComponent, null),document.getElementById('View'));
+
+},{"./component/DCChildButton":180,"./component/DCChildGoogle":181,"./component/DistanceCal":182,"./component/MapDisplay":183,"react":178,"react-dom":35}]},{},[185]);
